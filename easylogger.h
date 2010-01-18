@@ -1,3 +1,10 @@
+// easylogger - Simple "good enough" C++ logging framework
+// 
+// Copyright (C) 2010 Sean Middleditch <sean@middleditch.us>
+//
+// janssonxx is free software; you can redistribute it and/or modify
+// it under the terms of the MIT license. See LICENSE for details.
+
 #if !defined(EASYLOGGER_H)
 #define EASYLOGGER_H
 
@@ -11,12 +18,12 @@ namespace easylogger {
 	class Logger;
 
 	enum LogLevel {
-		LOG_TRACE,
-		LOG_DEBUG,
-		LOG_INFO,
-		LOG_WARNING,
-		LOG_ERROR,
-		LOG_FATAL
+		LEVEL_TRACE,
+		LEVEL_DEBUG,
+		LEVEL_INFO,
+		LEVEL_WARNING,
+		LEVEL_ERROR,
+		LEVEL_FATAL
 	};
 
 	class LogFormatter {
@@ -30,12 +37,12 @@ namespace easylogger {
 	protected:
 		const char* LevelText(LogLevel level) {
 			switch (level) {
-			case LOG_TRACE: return "TRACE";
-			case LOG_DEBUG: return "DEBUG";
-			case LOG_INFO: return "INFO";
-			case LOG_WARNING: return "WARNING";
-			case LOG_ERROR: return "ERROR";
-			case LOG_FATAL: return "FATAL";
+			case LEVEL_TRACE: return "TRACE";
+			case LEVEL_DEBUG: return "DEBUG";
+			case LEVEL_INFO: return "INFO";
+			case LEVEL_WARNING: return "WARNING";
+			case LEVEL_ERROR: return "ERROR";
+			case LEVEL_FATAL: return "FATAL";
 			default: return "UNKNOWN";
 			}
 		}
@@ -72,11 +79,11 @@ namespace easylogger {
 	class Logger {
 	public:
 		Logger(const ::std::string& name) : _name(name), _parent(0),
-				_level(LOG_INFO), _stream(&::std::cout),
+				_level(LEVEL_INFO), _stream(&::std::cout),
 				_formatter(new LogFormatter()) {}
 
 		Logger(const ::std::string& name, Logger& parent) : _name(name),
-				_parent(&parent), _level(LOG_INFO), _stream(0),
+				_parent(&parent), _level(LEVEL_INFO), _stream(0),
 				_formatter(new LogFormatter()) {}
 
 		~Logger() {
@@ -173,25 +180,25 @@ template <typename T>
 				::easylogger::LogSink _easy_sink((logger).Log(level, __FILE__, __LINE__, __FUNCTION__)); \
 				_easy_sink << message; \
 			} while(0); \
-			if ((level) == ::easylogger::LOG_FATAL) { \
+			if ((level) == ::easylogger::LEVEL_FATAL) { \
 				(logger).Flush(); \
 				std::abort(); \
 			} \
 		} \
 	}while(0)
 
-#define LOG_TRACE(logger, message) EASY_LOG((logger), ::easylogger::LOG_TRACE, message)
-#define LOG_DEBUG(logger, message) EASY_LOG((logger), ::easylogger::LOG_DEBUG, message)
-#define LOG_INFO(logger, message) EASY_LOG((logger), ::easylogger::LOG_INFO, message)
-#define LOG_WARNING(logger, message) EASY_LOG((logger), ::easylogger::LOG_WARNING, message)
-#define LOG_ERROR(logger, message) EASY_LOG((logger), ::easylogger::LOG_ERROR, message)
-#define LOG_FATAL(logger, message) EASY_LOG((logger), ::easylogger::LOG_FATAL, message)
+#define LOG_TRACE(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_TRACE, message)
+#define LOG_DEBUG(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_DEBUG, message)
+#define LOG_INFO(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_INFO, message)
+#define LOG_WARNING(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_WARNING, message)
+#define LOG_ERROR(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_ERROR, message)
+#define LOG_FATAL(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_FATAL, message)
 
 
 #if !defined(NDEBUG)
 # define EASY_ASSERT(logger, expr, msg) do{ \
 		if (!(expr)) { \
-			EASY_LOG((logger), ::easylogger::LOG_FATAL, "ASSERTION FAILED: " #expr ": " msg); \
+			EASY_LOG((logger), ::easylogger::LEVEL_FATAL, "ASSERTION FAILED: " #expr ": " msg); \
 		} \
 	}while(0)
 #else
