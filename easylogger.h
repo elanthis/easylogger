@@ -154,9 +154,33 @@ namespace easylogger {
 		LogFormatter* _formatter;
 	};
 
-	void LogFormatter::Format(::std::ostream& stream, Logger* logger, LogLevel level,
-			const char* file, unsigned int line, const char* func,
-			const char* message) {
+	class Tracer {
+	public:
+		Tracer(Logger& logger, const char* file, unsigned int line,
+				const char* func, const char* name) : _logger(logger),
+				_file(file), _func(func), _name(name) {
+			LogSink sink(_logger.Log(LEVEL_TRACE, _file, line, _func));
+			sink.Stream() << "Entering " << _name;
+		}
+
+		~Tracer() {
+			LogSink sink(_logger.Log(LEVEL_TRACE, _file, 0, _func));
+			sink.Stream() << "Exiting " << _name;
+		}
+
+	private:
+		Logger& _logger;
+
+		const char* _file;
+
+		const char* _func;
+
+		const char* _name;
+	};
+
+	void LogFormatter::Format(::std::ostream& stream, Logger* logger,
+			LogLevel level, const char* file, unsigned int line,
+			const char* func, const char* message) {
 		stream << '[' << file << ':' << line << ' ' << func << "]: " <<
 				logger->Name() << ' ' << LevelText(level) << ": " << message <<
 				::std::endl;
@@ -210,5 +234,7 @@ template <typename T>
 #define ASSERT_NE(logger, lhs, rhs, msg) EASY_ASSERT((logger), (lhs) != (rhs), msg)
 #define ASSERT_TRUE(logger, expr) EASY_ASSERT((logger), (lhs) == true, msg)
 #define ASSERT_FALSE(logger, expr, msg) EASY_ASSERT((logger), (lhs) != false, msg)
+
+#define EASY_TRACE(logger, name) ::easylogger::Tracer easy_trace_ ## name((logger), __FILE__, __LINE__, __FUNCTION__, #name)
 
 #endif
