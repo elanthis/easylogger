@@ -72,39 +72,23 @@ namespace easylogger {
 
 		LogLevel Level(LogLevel level) { return _level = level; }
 
-		bool IsLevel(LogLevel level) const {
-			return _level <= level ||
-					(_parent != 0 && _parent->IsLevel(level));
-		}
+		inline bool IsLevel(LogLevel level) const;
 
-		LogSink Log(LogLevel level, const char* file, unsigned int line,
-				const char* func) {
-			return LogSink(this, level, file, line, func);
-		}
+		inline LogSink Log(LogLevel level, const char* file, unsigned int line,
+				const char* func);
 
-		void Log(LogLevel level, const char* file, unsigned int line,
-				const char* func, const char* message) {
-			Log(level, this, file, line, func, message);
-		}
+		inline void Log(LogLevel level, const char* file, unsigned int line,
+				const char* func, const char* message);
 
-		::std::ostream& Stream() const {
-			return *_stream;
-		}
+		::std::ostream& Stream() const { return *_stream; }
 
-		::std::ostream& Stream(::std::ostream& stream) {
-			_stream = &stream;
-			return *_stream;
-		}
+		inline ::std::ostream& Stream(::std::ostream& stream);
 
 		const ::std::string& Format() const { return _format; }
 
-		const ::std::string& Format(const ::std::string& format) {
-			return _format = format;
-		}
+		const ::std::string& Format(const ::std::string& format);
 
-		void Flush() {
-			_stream->flush();
-		}
+		void Flush() { _stream->flush(); }
 
 		void WriteLog(LogLevel level, Logger* logger, const char* file,
 				unsigned int line, const char* func, const char* message);
@@ -140,92 +124,6 @@ namespace easylogger {
 
 		const char* _name;
 	};
-
-	void Logger::WriteLog(LogLevel level, Logger* logger, const char* file,
-			unsigned int line, const char* func, const char* message) {
-		const char* cptr = _format.c_str();
-		while (*cptr != 0) {
-			if (*cptr == '%') {
-				switch (*++cptr) {
-				// % at end of stream
-				case 0:
-					*_stream << '%' << ::std::endl;
-					return;
-				// %% - literal escape
-				case '%':
-					*_stream << '%';
-					break;
-				// %F - file name
-				case 'F':
-					*_stream << file;
-					break;
-				// %C - line counter
-				case 'C':
-					if (line != 0) {
-						*_stream << line;
-					} else {
-						*_stream << '?';
-					}
-					break;
-				// %P - function name
-				case 'P':
-					*_stream << func;
-					break;
-				// %N - logger name
-				case 'N':
-					*_stream << logger->Name();
-					break;
-				// %L - log level
-				case 'L':
-					switch (level) {
-					case LEVEL_TRACE: *_stream << "TRACE"; break;
-					case LEVEL_DEBUG: *_stream << "DEBUG"; break;
-					case LEVEL_INFO: *_stream << "INFO"; break;
-					case LEVEL_WARNING: *_stream << "WARNING"; break;
-					case LEVEL_ERROR: *_stream << "ERROR"; break;
-					case LEVEL_FATAL: *_stream << "FATAL"; break;
-					default: *_stream << "UNKNOWN"; break;
-					}
-					break;
-				// %M - message
-				case 'S':
-					*_stream << message;
-					break;
-				}
-			} else {
-				*_stream << *cptr;
-			}
-
-			++cptr;
-		}
-		*_stream << ::std::endl;
-	}
-
-	void Logger::Log(LogLevel level, Logger* logger, const char* file,
-			unsigned int line, const char* func, const char* message) {
-		if (_level <= level && _stream != 0) {
-			WriteLog(level, logger, file, line, func, message);
-		}
-		if (_parent != 0) {
-			_parent->Log(level, logger, file, line, func, message);
-		}
-	}
-
-	Tracer::Tracer(Logger& logger, const char* file, unsigned int line,
-			const char* func, const char* name) : _logger(logger),
-			_file(file), _func(func), _name(name) {
-		LogSink sink(_logger.Log(LEVEL_TRACE, _file, line, _func));
-		sink.Stream() << "Entering " << _name;
-	}
-
-	Tracer::~Tracer() {
-		LogSink sink(_logger.Log(LEVEL_TRACE, _file, 0, _func));
-		sink.Stream() << "Exiting " << _name;
-	}
-
-	LogSink::~LogSink() {
-		_logger->Log(_level, _file, _line, _func, _os.str().c_str());
-	}
 
 } // namespace easylogger
 
@@ -273,5 +171,7 @@ template <typename T>
 #define ASSERT_FALSE(logger, expr, msg) EASY_ASSERT((logger), (lhs) != false, msg)
 
 #define EASY_TRACE(logger, name) ::easylogger::Tracer easy_trace_ ## name((logger), __FILE__, __LINE__, __FUNCTION__, #name)
+
+#include "easylogger-impl.h"
 
 #endif
