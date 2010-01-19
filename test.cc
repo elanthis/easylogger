@@ -3,7 +3,7 @@
 int main() {
 	easylogger::Logger TEST("TEST");
 	easylogger::Logger SUB("SUB", TEST);
-	SUB.Level(easylogger::LOG_WARNING);
+	SUB.Level(easylogger::LEVEL_WARNING);
 
 	LOG_INFO(TEST, "Hi!" << 42);
 	LOG_DEBUG(TEST, "don't show me");
