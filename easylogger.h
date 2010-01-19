@@ -26,28 +26,6 @@ namespace easylogger {
 		LEVEL_FATAL
 	};
 
-	class LogFormatter {
-	public:
-		virtual ~LogFormatter() {}
-
-		virtual void Format(::std::ostream& stream, Logger* logger,
-				LogLevel level, const char* file, unsigned int line,
-				const char* func, const char* message);
-
-	protected:
-		const char* LevelText(LogLevel level) {
-			switch (level) {
-			case LEVEL_TRACE: return "TRACE";
-			case LEVEL_DEBUG: return "DEBUG";
-			case LEVEL_INFO: return "INFO";
-			case LEVEL_WARNING: return "WARNING";
-			case LEVEL_ERROR: return "ERROR";
-			case LEVEL_FATAL: return "FATAL";
-			default: return "UNKNOWN";
-			}
-		}
-	};
-
 	class LogSink {
 	public:
 		LogSink(Logger* logger, LogLevel level, const char* file,
@@ -80,15 +58,13 @@ namespace easylogger {
 	public:
 		Logger(const ::std::string& name) : _name(name), _parent(0),
 				_level(LEVEL_INFO), _stream(&::std::cout),
-				_formatter(new LogFormatter()) {}
+				_format("[%F:%C %P] %N %L: %S") {}
 
 		Logger(const ::std::string& name, Logger& parent) : _name(name),
 				_parent(&parent), _level(LEVEL_INFO), _stream(0),
-				_formatter(new LogFormatter()) {}
+				_format("[%F:%C %P] %N %L: %S") {}
 
-		~Logger() {
-			delete _formatter;
-		}
+		~Logger() {}
 
 		const ::std::string& Name() const { return _name; }
 
@@ -120,28 +96,22 @@ namespace easylogger {
 			return *_stream;
 		}
 
-		LogFormatter* Formatter() const { return _formatter; }
+		const ::std::string& Format() const { return _format; }
 
-		LogFormatter* Formatter(LogFormatter* formatter) {
-			delete _formatter;
-			return _formatter = formatter;
+		const ::std::string& Format(const ::std::string& format) {
+			return _format = format;
 		}
 
 		void Flush() {
 			_stream->flush();
 		}
+
+		void WriteLog(LogLevel level, Logger* logger, const char* file,
+				unsigned int line, const char* func, const char* message);
 	
 	private:
-		void Log(LogLevel level, Logger* logger, const char* file,
-				unsigned int line, const char* func, const char* message) {
-			if (_level <= level && _stream != 0) {
-				_formatter->Format(*_stream, logger, level, file, line, func,
-						message);
-			}
-			if (_parent != 0) {
-				_parent->Log(level, logger, file, line, func, message);
-			}
-		}
+		inline void Log(LogLevel level, Logger* logger, const char* file,
+				unsigned int line, const char* func, const char* message);
 
 		::std::string _name;
 
@@ -149,24 +119,17 @@ namespace easylogger {
 
 		LogLevel _level;
 
-		std::ostream* _stream;
+		::std::ostream* _stream;
 
-		LogFormatter* _formatter;
+		::std::string _format;
 	};
 
 	class Tracer {
 	public:
-		Tracer(Logger& logger, const char* file, unsigned int line,
-				const char* func, const char* name) : _logger(logger),
-				_file(file), _func(func), _name(name) {
-			LogSink sink(_logger.Log(LEVEL_TRACE, _file, line, _func));
-			sink.Stream() << "Entering " << _name;
-		}
+		inline Tracer(Logger& logger, const char* file, unsigned int line,
+				const char* func, const char* name);
 
-		~Tracer() {
-			LogSink sink(_logger.Log(LEVEL_TRACE, _file, 0, _func));
-			sink.Stream() << "Exiting " << _name;
-		}
+		inline ~Tracer();
 
 	private:
 		Logger& _logger;
@@ -178,12 +141,86 @@ namespace easylogger {
 		const char* _name;
 	};
 
-	void LogFormatter::Format(::std::ostream& stream, Logger* logger,
-			LogLevel level, const char* file, unsigned int line,
-			const char* func, const char* message) {
-		stream << '[' << file << ':' << line << ' ' << func << "]: " <<
-				logger->Name() << ' ' << LevelText(level) << ": " << message <<
-				::std::endl;
+	void Logger::WriteLog(LogLevel level, Logger* logger, const char* file,
+			unsigned int line, const char* func, const char* message) {
+		const char* cptr = _format.c_str();
+		while (*cptr != 0) {
+			if (*cptr == '%') {
+				switch (*++cptr) {
+				// % at end of stream
+				case 0:
+					*_stream << '%' << ::std::endl;
+					return;
+				// %% - literal escape
+				case '%':
+					*_stream << '%';
+					break;
+				// %F - file name
+				case 'F':
+					*_stream << file;
+					break;
+				// %C - line counter
+				case 'C':
+					if (line != 0) {
+						*_stream << line;
+					} else {
+						*_stream << '?';
+					}
+					break;
+				// %P - function name
+				case 'P':
+					*_stream << func;
+					break;
+				// %N - logger name
+				case 'N':
+					*_stream << logger->Name();
+					break;
+				// %L - log level
+				case 'L':
+					switch (level) {
+					case LEVEL_TRACE: *_stream << "TRACE"; break;
+					case LEVEL_DEBUG: *_stream << "DEBUG"; break;
+					case LEVEL_INFO: *_stream << "INFO"; break;
+					case LEVEL_WARNING: *_stream << "WARNING"; break;
+					case LEVEL_ERROR: *_stream << "ERROR"; break;
+					case LEVEL_FATAL: *_stream << "FATAL"; break;
+					default: *_stream << "UNKNOWN"; break;
+					}
+					break;
+				// %M - message
+				case 'S':
+					*_stream << message;
+					break;
+				}
+			} else {
+				*_stream << *cptr;
+			}
+
+			++cptr;
+		}
+		*_stream << ::std::endl;
+	}
+
+	void Logger::Log(LogLevel level, Logger* logger, const char* file,
+			unsigned int line, const char* func, const char* message) {
+		if (_level <= level && _stream != 0) {
+			WriteLog(level, logger, file, line, func, message);
+		}
+		if (_parent != 0) {
+			_parent->Log(level, logger, file, line, func, message);
+		}
+	}
+
+	Tracer::Tracer(Logger& logger, const char* file, unsigned int line,
+			const char* func, const char* name) : _logger(logger),
+			_file(file), _func(func), _name(name) {
+		LogSink sink(_logger.Log(LEVEL_TRACE, _file, line, _func));
+		sink.Stream() << "Entering " << _name;
+	}
+
+	Tracer::~Tracer() {
+		LogSink sink(_logger.Log(LEVEL_TRACE, _file, 0, _func));
+		sink.Stream() << "Exiting " << _name;
 	}
 
 	LogSink::~LogSink() {
