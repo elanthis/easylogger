@@ -85,7 +85,7 @@ namespace easylogger {
 		public:
 			//! Construct a new Tracer instance.
 			//!
-			//! This is meant to be used by the EASY_TRACE macro.
+			//! This is meant to be used by the TRACE macro.
 			//!
 			//! \param logger Logger instance to log trace to.
 			//! \param file Name of file at trace point.
@@ -238,7 +238,7 @@ template <typename T>
 //! \param logger Logger to log to.
 //! \param level Level to log at
 //! \param message Stream message.
-#define EASY_LOG(logger, level, message) do{ \
+#define _EASY_LOG(logger, level, message) do{ \
 		if ((logger).IsLevel((level))) { \
 			do { \
 				::easylogger::_private::LogSink _easy_sink((logger).Log(level, __FILE__, __LINE__, __FUNCTION__)); \
@@ -251,31 +251,31 @@ template <typename T>
 		} \
 	}while(0)
 
-#define LOG_TRACE(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_TRACE, message)
-#define LOG_DEBUG(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_DEBUG, message)
-#define LOG_INFO(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_INFO, message)
-#define LOG_WARNING(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_WARNING, message)
-#define LOG_ERROR(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_ERROR, message)
-#define LOG_FATAL(logger, message) EASY_LOG((logger), ::easylogger::LEVEL_FATAL, message)
+#define LOG_TRACE(logger, message) _EASY_LOG((logger), ::easylogger::LEVEL_TRACE, message)
+#define LOG_DEBUG(logger, message) _EASY_LOG((logger), ::easylogger::LEVEL_DEBUG, message)
+#define LOG_INFO(logger, message) _EASY_LOG((logger), ::easylogger::LEVEL_INFO, message)
+#define LOG_WARNING(logger, message) _EASY_LOG((logger), ::easylogger::LEVEL_WARNING, message)
+#define LOG_ERROR(logger, message) _EASY_LOG((logger), ::easylogger::LEVEL_ERROR, message)
+#define LOG_FATAL(logger, message) _EASY_LOG((logger), ::easylogger::LEVEL_FATAL, message)
 
 
 #if !defined(NDEBUG)
-# define EASY_ASSERT(logger, expr, msg) do{ \
+# define ASSERT(logger, expr, msg) do{ \
 		if (!(expr)) { \
-			EASY_LOG((logger), ::easylogger::LEVEL_FATAL, "ASSERTION FAILED: " #expr ": " msg); \
+			_EASY_LOG((logger), ::easylogger::LEVEL_FATAL, "ASSERTION FAILED: " #expr ": " msg); \
 		} \
 	}while(0)
 #else
-# define EASY_ASSERT(logger, expr, msg) do{ }while(0)
+# define ASSERT(logger, expr, msg) do{ }while(0)
 #endif
 
-#define ASSERT_NOTNULL(logger, expr, msg) EASY_ASSERT((logger), (expr) != NULL, msg)
-#define ASSERT_EQ(logger, lhs, rhs, msg) EASY_ASSERT((logger), (lhs) == (rhs), msg)
-#define ASSERT_NE(logger, lhs, rhs, msg) EASY_ASSERT((logger), (lhs) != (rhs), msg)
-#define ASSERT_TRUE(logger, expr) EASY_ASSERT((logger), (lhs) == true, msg)
-#define ASSERT_FALSE(logger, expr, msg) EASY_ASSERT((logger), (lhs) != false, msg)
+#define ASSERT_NOTNULL(logger, expr, msg) ASSERT((logger), (expr) != NULL, msg)
+#define ASSERT_EQ(logger, lhs, rhs, msg) ASSERT((logger), (lhs) == (rhs), msg)
+#define ASSERT_NE(logger, lhs, rhs, msg) ASSERT((logger), (lhs) != (rhs), msg)
+#define ASSERT_TRUE(logger, expr) ASSERT((logger), (lhs) == true, msg)
+#define ASSERT_FALSE(logger, expr, msg) ASSERT((logger), (lhs) != false, msg)
 
-#define EASY_TRACE(logger, name) ::easylogger::_private::Tracer easy_trace_ ## name((logger), __FILE__, __LINE__, __FUNCTION__, #name)
+#define TRACE(logger, name) ::easylogger::_private::Tracer easy_trace_ ## name((logger), __FILE__, __LINE__, __FUNCTION__, #name)
 
 #include "easylogger-impl.h"
 
