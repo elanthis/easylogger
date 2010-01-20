@@ -4,9 +4,9 @@ namespace easylogger {
 		return _level <= level || (_parent != 0 && _parent->IsLevel(level));
 	}
 
-	LogSink Logger::Log(LogLevel level, const char* file, unsigned int line,
-			const char* func) {
-		return LogSink(this, level, file, line, func);
+	_private::LogSink Logger::Log(LogLevel level, const char* file,
+			unsigned int line, const char* func) {
+		return _private::LogSink(this, level, file, line, func);
 	}
 
 	void Logger::Log(LogLevel level, const char* file, unsigned int line,
@@ -93,19 +93,19 @@ namespace easylogger {
 		}
 	}
 
-	Tracer::Tracer(Logger& logger, const char* file, unsigned int line,
-			const char* func, const char* name) : _logger(logger),
-			_file(file), _func(func), _name(name) {
-		LogSink sink(_logger.Log(LEVEL_TRACE, _file, line, _func));
+	_private::Tracer::Tracer(Logger& logger, const char* file,
+			unsigned int line, const char* func, const char* name) :
+			_logger(logger), _file(file), _func(func), _name(name) {
+		_private::LogSink sink(_logger.Log(LEVEL_TRACE, _file, line, _func));
 		sink.Stream() << "Entering " << _name;
 	}
 
-	Tracer::~Tracer() {
-		LogSink sink(_logger.Log(LEVEL_TRACE, _file, 0, _func));
+	_private::Tracer::~Tracer() {
+		_private::LogSink sink(_logger.Log(LEVEL_TRACE, _file, 0, _func));
 		sink.Stream() << "Exiting " << _name;
 	}
 
-	LogSink::~LogSink() {
+	_private::LogSink::~LogSink() {
 		_logger->Log(_level, _file, _line, _func, _os.str().c_str());
 	}
 
