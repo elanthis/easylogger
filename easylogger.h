@@ -153,16 +153,6 @@ namespace easylogger {
 		inline _private::LogSink Log(LogLevel level, const char* file,
 				unsigned int line, const char* func);
 
-		//! Write log to stream
-		//!
-		//! @param level Level of log message.
-		//! @param file Name of file at point of log.
-		//! @param line Line of file at point of log.
-		//! @param func Name of function at point of log.
-		//! @param message The log message.
-		inline void Log(LogLevel level, const char* file, unsigned int line,
-				const char* func, const char* message);
-
 		//! Get the underlying stream
 		//!
 		//! @returns underlying stream
@@ -192,7 +182,8 @@ namespace easylogger {
 
 		//! Flushes underlying output stream
 		void Flush() { _stream->flush(); }
-
+	
+	private:
 		//! Write log to stream
 		//!
 		//! Does the actual work of writing log message.
@@ -205,21 +196,6 @@ namespace easylogger {
 		//! @param message The log message.
 		void WriteLog(LogLevel level, Logger* logger, const char* file,
 				unsigned int line, const char* func, const char* message);
-	
-	private:
-		//! Write log
-		//!
-		//! Meant to be called by the Log() method in recursive fashion for
-		//! hierarchial loggers.
-		//!
-		//! @param level Level of log message.
-		//! @param logger Original Logger target of message.
-		//! @param file Name of file at point of log.
-		//! @param line Line of file at point of log.
-		//! @param func Name of function at point of log.
-		//! @param message The log message.
-		inline void Log(LogLevel level, Logger* logger, const char* file,
-				unsigned int line, const char* func, const char* message);
 
 		::std::string _name;
 
@@ -230,6 +206,8 @@ namespace easylogger {
 		::std::ostream* _stream;
 
 		::std::string _format;
+
+		friend class _private::LogSink;
 	};
 
 } // namespace easylogger
